@@ -25,22 +25,21 @@ export function RestTimer({
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const onCompleteRef = useRef(onComplete)
   const onSkipRef = useRef(onSkip)
-
-  // Manter refs atualizadas
   onCompleteRef.current = onComplete
   onSkipRef.current = onSkip
 
-  const clearTimer = () => {
+  // Limpa o intervalo
+  const stopTimer = () => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current)
       intervalRef.current = null
     }
   }
 
-  // Iniciar/parar o intervalo
+  // Inicia o intervalo de contagem regressiva
   useEffect(() => {
     if (!isRunning || isFinished || timeLeft <= 0) {
-      clearTimer()
+      stopTimer()
       return
     }
 
@@ -48,53 +47,48 @@ export function RestTimer({
       setTimeLeft((prev) => prev - 1)
     }, 1000)
 
-    return clearTimer
+    return stopTimer
   }, [isRunning, isFinished, timeLeft])
 
-  // Detectar quando zera
+  // Detecta quando chegou a zero
   useEffect(() => {
-    if (timeLeft <= 0 && !isFinished) {
-      setIsFinished(true)
-      setIsRunning(false)
-      clearTimer()
+    if (timeLeft > 0 || isFinished) return
 
-      // Beep
-      try {
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-        const osc = ctx.createOscillator()
-        const gain = ctx.createGain()
-        osc.connect(gain)
-        gain.connect(ctx.destination)
-        osc.frequency.value = 880
-        osc.type = "sine"
-        gain.gain.value = 0.3
-        osc.start()
-        osc.stop(ctx.currentTime + 0.3)
-      } catch {}
+    setIsFinished(true)
+    setIsRunning(false)
+    stopTimer()
 
-      // Vibrar
-      if ("vibrate" in navigator) {
-        navigator.vibrate([200, 100, 200])
-      }
+    // Beep
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.frequency.value = 880
+      osc.type = "sine"
+      gain.gain.value = 0.3
+      osc.start()
+      osc.stop(ctx.currentTime + 0.3)
+    } catch {}
 
-      // Auto-fechar após 1.5s
-      setTimeout(() => onCompleteRef.current(), 1500)
-    }
+    // Vibrar
+    try { navigator.vibrate?.([200, 100, 200]) } catch {}
+
+    // Auto-fechar após 1.5s
+    setTimeout(() => onCompleteRef.current(), 1500)
   }, [timeLeft, isFinished])
 
-  // Garantir que o timer comece ao montar
+  // Inicializa ao montar ou quando seconds muda
   useEffect(() => {
-    setIsRunning(true)
     setTimeLeft(seconds)
+    setIsRunning(true)
     setIsFinished(false)
-
-    return () => clearTimer()
+    return stopTimer
   }, [seconds])
 
   // Cleanup ao desmontar
-  useEffect(() => {
-    return () => clearTimer()
-  }, [])
+  useEffect(() => stopTimer, [])
 
   const formatTime = (totalSecs: number) => {
     const mins = Math.floor(totalSecs / 60)
@@ -107,16 +101,16 @@ export function RestTimer({
   const strokeDashoffset = circumference - (progress / 100) * circumference
 
   const handlePauseResume = () => {
-    if (!isFinished) setIsRunning((prev) => !prev)
+    if (!isFinished) setIsRunning((p) => !p)
   }
 
   const handleSkip = () => {
-    clearTimer()
+    stopTimer()
     onSkipRef.current()
   }
 
   const handleFinish = () => {
-    clearTimer()
+    stopTimer()
     onCompleteRef.current()
   }
 
@@ -168,9 +162,7 @@ export function RestTimer({
             {isFinished ? (
               <>
                 <Bell className="h-8 w-8 text-green-500 mb-1 animate-bounce" />
-                <span className="text-sm font-bold text-green-500 animate-pulse">
-                  PRONTO!
-                </span>
+                <span className="text-sm font-bold text-green-500 animate-pulse">PRONTO!</span>
               </>
             ) : (
               <span className="text-4xl font-bold tabular-nums tracking-tighter">
@@ -193,34 +185,15 @@ export function RestTimer({
         <div className="flex items-center gap-2 w-full">
           {!isFinished ? (
             <>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 gap-1.5"
-                onClick={handlePauseResume}
-              >
-                {isRunning ? (
-                  <><Pause className="h-3.5 w-3.5" /> Pausar</>
-                ) : (
-                  <><Play className="h-3.5 w-3.5" /> Continuar</>
-                )}
+              <Button variant="outline" size="sm" className="flex-1 gap-1.5" onClick={handlePauseResume}>
+                {isRunning ? <><Pause className="h-3.5 w-3.5" /> Pausar</> : <><Play className="h-3.5 w-3.5" /> Continuar</>}
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-1 gap-1.5"
-                onClick={handleSkip}
-              >
+              <Button variant="ghost" size="sm" className="flex-1 gap-1.5" onClick={handleSkip}>
                 <SkipForward className="h-3.5 w-3.5" /> Pular
               </Button>
             </>
           ) : (
-            <Button
-              variant="default"
-              size="sm"
-              className="w-full gap-1.5"
-              onClick={handleFinish}
-            >
+            <Button variant="default" size="sm" className="w-full gap-1.5" onClick={handleFinish}>
               <Play className="h-3.5 w-3.5" /> Próxima série
             </Button>
           )}

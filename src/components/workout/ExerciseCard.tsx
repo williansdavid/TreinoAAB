@@ -47,7 +47,6 @@ export function ExerciseCard({
 
   const handleCompleteSet = (set: WorkoutSet) => {
     onUpdateSet(set.id, { concluido: true })
-    // Auto-inicia o timer de descanso
     setRestTimer({ active: true, setId: set.id })
   }
 
@@ -166,9 +165,10 @@ export function ExerciseCard({
             {exercise.media_url ? "Ver detalhes" : "Adicionar visualização"}
           </Button>
 
-          {/* Timer de descanso - auto-inicia ao marcar série */}
+          {/* Timer de descanso */}
           {restTimer.active && restTimer.setId && (
             <RestTimer
+              key={restTimer.setId}
               seconds={
                 workoutExercise.sets.find((s) => s.id === restTimer.setId)
                   ?.descanso_seg || 60
@@ -177,7 +177,6 @@ export function ExerciseCard({
               serieNumber={completedSets}
               onComplete={handleRestComplete}
               onSkip={handleRestSkip}
-              autoStart={true}
             />
           )}
 
@@ -206,7 +205,6 @@ export function ExerciseCard({
                       )}
                     </span>
                     <div className="flex items-center gap-2">
-                      {/* Timer manual (só aparece se não estiver em descanso automático) */}
                       {!isResting && !isCompleted && (
                         <Button
                           variant="ghost"
@@ -223,8 +221,6 @@ export function ExerciseCard({
                           <Timer className="w-4 h-4" />
                         </Button>
                       )}
-
-                      {/* Checkbox - ao marcar, auto-inicia o timer */}
                       {!isCompleted ? (
                         <Checkbox
                           checked={false}
