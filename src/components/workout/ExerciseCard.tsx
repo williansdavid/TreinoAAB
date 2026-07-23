@@ -1,28 +1,29 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { 
-  Eye, 
-  Check, 
-  Timer, 
-  ChevronDown, 
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Eye,
+  Check,
+  Timer,
+  ChevronDown,
   ChevronUp,
   Plus,
   Minus,
   RotateCcw,
-  Trash2
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { WorkoutExercise, WorkoutSet } from "@/hooks/useWorkouts";
+  Trash2,
+} from "lucide-react"
+import { cn } from "@/lib/utils"
+import { RestTimer } from "./RestTimer"
+import type { WorkoutExercise, WorkoutSet } from "@/hooks/useWorkouts"
 
 interface ExerciseCardProps {
-  workoutExercise: WorkoutExercise;
-  onUpdateSet: (setId: string, updates: Partial<WorkoutSet>) => Promise<boolean>;
-  onCompleteExercise: (exerciseId: string) => Promise<boolean>;
-  onReopenExercise?: (exerciseId: string) => Promise<boolean>;
-  onDeleteExercise?: (exerciseId: string) => Promise<boolean>;
-  onViewExercise: (exerciseId: string) => void;
+  workoutExercise: WorkoutExercise
+  onUpdateSet: (setId: string, updates: Partial<WorkoutSet>) => Promise<boolean>
+  onCompleteExercise: (exerciseId: string) => Promise<boolean>
+  onReopenExercise?: (exerciseId: string) => Promise<boolean>
+  onDeleteExercise?: (exerciseId: string) => Promise<boolean>
+  onViewExercise: (exerciseId: string) => void
 }
 
 export function ExerciseCard({
@@ -33,40 +34,30 @@ export function ExerciseCard({
   onDeleteExercise,
   onViewExercise,
 }: ExerciseCardProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
-  const [activeTimer, setActiveTimer] = useState<string | null>(null);
-  const [timerSeconds, setTimerSeconds] = useState(0);
+  const [isExpanded, setIsExpanded] = useState(true)
+  const [restTimer, setRestTimer] = useState<{
+    active: boolean
+    setId: string | null
+  }>({ active: false, setId: null })
 
-  const exercise = workoutExercise.exercise;
-  const completedSets = workoutExercise.sets.filter((s) => s.concluido).length;
-  const totalSets = workoutExercise.sets.length;
-  const allSetsCompleted = completedSets === totalSets;
+  const exercise = workoutExercise.exercise
+  const completedSets = workoutExercise.sets.filter((s) => s.concluido).length
+  const totalSets = workoutExercise.sets.length
+  const allSetsCompleted = completedSets === totalSets
 
-  const startTimer = (setId: string, seconds: number) => {
-    setActiveTimer(setId);
-    setTimerSeconds(seconds);
+  const handleCompleteSet = (set: WorkoutSet) => {
+    onUpdateSet(set.id, { concluido: true })
+    // Auto-inicia o timer de descanso
+    setRestTimer({ active: true, setId: set.id })
+  }
 
-    const interval = setInterval(() => {
-      setTimerSeconds((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          setActiveTimer(null);
-          // Play sound or vibrate
-          if ("vibrate" in navigator) {
-            navigator.vibrate([200, 100, 200]);
-          }
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
+  const handleRestComplete = () => {
+    setRestTimer({ active: false, setId: null })
+  }
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
+  const handleRestSkip = () => {
+    setRestTimer({ active: false, setId: null })
+  }
 
   const adjustValue = (
     setId: string,
@@ -74,11 +65,11 @@ export function ExerciseCard({
     delta: number,
     currentValue: number | null
   ) => {
-    const newValue = Math.max(0, (currentValue || 0) + delta);
-    onUpdateSet(setId, { [field]: newValue });
-  };
+    const newValue = Math.max(0, (currentValue || 0) + delta)
+    onUpdateSet(setId, { [field]: newValue })
+  }
 
-  if (!exercise) return null;
+  if (!exercise) return null
 
   return (
     <div
@@ -108,12 +99,11 @@ export function ExerciseCard({
           <div className="text-left">
             <h3 className="font-semibold">{exercise.nome}</h3>
             <p className="text-sm text-muted-foreground">
-              {exercise.grupo_muscular} • {completedSets}/{totalSets} séries
+              {exercise.grupo_muscular} &bull; {completedSets}/{totalSets} séries
               {workoutExercise.concluido && " ✓"}
             </p>
           </div>
         </button>
-        
         <div className="flex items-center gap-1">
           {workoutExercise.concluido && onReopenExercise && (
             <Button
@@ -159,7 +149,7 @@ export function ExerciseCard({
                 className="w-full h-auto max-h-64 object-contain cursor-pointer"
                 onClick={() => onViewExercise(exercise.id)}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
+                  (e.target as HTMLImageElement).style.display = "none"
                 }}
               />
             </div>
@@ -176,130 +166,164 @@ export function ExerciseCard({
             {exercise.media_url ? "Ver detalhes" : "Adicionar visualização"}
           </Button>
 
+          {/* Timer de descanso - auto-inicia ao marcar série */}
+          {restTimer.active && restTimer.setId && (
+            <RestTimer
+              seconds={
+                workoutExercise.sets.find((s) => s.id === restTimer.setId)
+                  ?.descanso_seg || 60
+              }
+              exerciseName={exercise.nome}
+              serieNumber={completedSets}
+              onComplete={handleRestComplete}
+              onSkip={handleRestSkip}
+              autoStart={true}
+            />
+          )}
+
           {/* Sets */}
           <div className="space-y-3">
-            {workoutExercise.sets.map((set) => (
-              <div
-                key={set.id}
-                className={cn(
-                  "p-3 rounded-lg border transition-all",
-                  set.concluido
-                    ? "bg-success/10 border-success/30"
-                    : "bg-muted/50 border-border"
-                )}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="font-medium">Série {set.num_serie}</span>
-                  <div className="flex items-center gap-2">
-                    {activeTimer === set.id ? (
-                      <span className="text-primary font-mono font-bold">
-                        {formatTime(timerSeconds)}
-                      </span>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        size="iconSm"
-                        onClick={() => startTimer(set.id, set.descanso_seg)}
-                        disabled={set.concluido}
-                      >
-                        <Timer className="w-4 h-4" />
-                      </Button>
-                    )}
-                    <Checkbox
-                      checked={set.concluido}
-                      onCheckedChange={(checked) =>
-                        onUpdateSet(set.id, { concluido: checked as boolean })
-                      }
-                    />
-                  </div>
-                </div>
+            {workoutExercise.sets.map((set) => {
+              const isCompleted = set.concluido
+              const isResting = restTimer.active && restTimer.setId === set.id
 
-                <div className="grid grid-cols-2 gap-3">
-                  {/* Reps */}
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">
-                      Reps (alvo: {set.reps_alvo})
-                    </label>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="iconSm"
-                        onClick={() =>
-                          adjustValue(set.id, "reps_feitas", -1, set.reps_feitas)
-                        }
-                        disabled={set.concluido}
-                      >
-                        <Minus className="w-4 h-4" />
-                      </Button>
-                      <Input
-                        type="number"
-                        value={set.reps_feitas ?? ""}
-                        onChange={(e) =>
-                          onUpdateSet(set.id, {
-                            reps_feitas: parseInt(e.target.value) || 0,
-                          })
-                        }
-                        className="text-center h-9"
-                        placeholder={set.reps_alvo.toString()}
-                        disabled={set.concluido}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="iconSm"
-                        onClick={() =>
-                          adjustValue(set.id, "reps_feitas", 1, set.reps_feitas)
-                        }
-                        disabled={set.concluido}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
+              return (
+                <div
+                  key={set.id}
+                  className={cn(
+                    "p-3 rounded-lg border transition-all",
+                    isCompleted
+                      ? "bg-success/10 border-success/30"
+                      : "bg-muted/50 border-border",
+                    isResting && "ring-2 ring-primary/30"
+                  )}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-medium">
+                      Série {set.num_serie}
+                      {isCompleted && (
+                        <span className="ml-2 text-xs text-green-500">✓</span>
+                      )}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {/* Timer manual (só aparece se não estiver em descanso automático) */}
+                      {!isResting && !isCompleted && (
+                        <Button
+                          variant="ghost"
+                          size="iconSm"
+                          onClick={() =>
+                            setRestTimer({
+                              active: true,
+                              setId: set.id,
+                            })
+                          }
+                          disabled={isCompleted}
+                          title="Iniciar descanso manual"
+                        >
+                          <Timer className="w-4 h-4" />
+                        </Button>
+                      )}
+
+                      {/* Checkbox - ao marcar, auto-inicia o timer */}
+                      {!isCompleted ? (
+                        <Checkbox
+                          checked={false}
+                          onCheckedChange={() => handleCompleteSet(set)}
+                        />
+                      ) : (
+                        <span className="text-green-500">
+                          <Check className="w-5 h-5" />
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  {/* Carga */}
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">
-                      Carga (kg)
-                    </label>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="iconSm"
-                        onClick={() =>
-                          adjustValue(set.id, "carga", -2.5, set.carga)
-                        }
-                        disabled={set.concluido}
-                      >
-                        <Minus className="w-4 h-4" />
-                      </Button>
-                      <Input
-                        type="number"
-                        step="0.5"
-                        value={set.carga ?? ""}
-                        onChange={(e) =>
-                          onUpdateSet(set.id, {
-                            carga: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                        className="text-center h-9"
-                        placeholder="0"
-                        disabled={set.concluido}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="iconSm"
-                        onClick={() =>
-                          adjustValue(set.id, "carga", 2.5, set.carga)
-                        }
-                        disabled={set.concluido}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Reps */}
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">
+                        Reps (alvo: {set.reps_alvo})
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="iconSm"
+                          onClick={() =>
+                            adjustValue(set.id, "reps_feitas", -1, set.reps_feitas)
+                          }
+                          disabled={isCompleted}
+                        >
+                          <Minus className="w-4 h-4" />
+                        </Button>
+                        <Input
+                          type="number"
+                          value={set.reps_feitas ?? ""}
+                          onChange={(e) =>
+                            onUpdateSet(set.id, {
+                              reps_feitas: parseInt(e.target.value) || 0,
+                            })
+                          }
+                          className="text-center h-9"
+                          placeholder={set.reps_alvo.toString()}
+                          disabled={isCompleted}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="iconSm"
+                          onClick={() =>
+                            adjustValue(set.id, "reps_feitas", 1, set.reps_feitas)
+                          }
+                          disabled={isCompleted}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    {/* Carga */}
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">
+                        Carga (kg)
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="iconSm"
+                          onClick={() =>
+                            adjustValue(set.id, "carga", -2.5, set.carga)
+                          }
+                          disabled={isCompleted}
+                        >
+                          <Minus className="w-4 h-4" />
+                        </Button>
+                        <Input
+                          type="number"
+                          step="0.5"
+                          value={set.carga ?? ""}
+                          onChange={(e) =>
+                            onUpdateSet(set.id, {
+                              carga: parseFloat(e.target.value) || 0,
+                            })
+                          }
+                          className="text-center h-9"
+                          placeholder="0"
+                          disabled={isCompleted}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="iconSm"
+                          onClick={() =>
+                            adjustValue(set.id, "carga", 2.5, set.carga)
+                          }
+                          disabled={isCompleted}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           {/* Complete exercise button */}
@@ -317,5 +341,5 @@ export function ExerciseCard({
         </div>
       )}
     </div>
-  );
+  )
 }
