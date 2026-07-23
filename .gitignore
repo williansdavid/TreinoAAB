@@ -32,6 +32,7 @@ yarn-error.log*
 supabase/.temp/
 supabase.temp/
 .supabase/
+supabase/config.toml
 
 # Sistema
 .DS_Store

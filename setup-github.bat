@@ -76,6 +76,7 @@ echo # Supabase
 echo supabase/.temp/
 echo supabase.temp/
 echo .supabase/
+echo supabase/config.toml
 echo.
 echo # Sistema
 echo .DS_Store
