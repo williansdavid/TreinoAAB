@@ -1,0 +1,336 @@
+TreinoSuporte / Treino IA
+
+DOCUMENTAÇÃO TÉCNICA DO SISTEMA
+
+Arquitetura, Engenharia de Dados e Fluxos Operacionais
+
+23 de julho de 2026
+
+---
+
+### 1. Visão Geral do Sistema
+
+O TreinoSuporte (também referenciado como Treino IA) é uma plataforma avançada de Progressive Web App (PWA) projetada para a gestão inteligente de rotinas de treinamento físico. O sistema adota uma abordagem mobile-first, priorizando a usabilidade em dispositivos móveis sem comprometer a robustez técnica necessária para o processamento de dados de performance esportiva.
+
+A arquitetura é baseada em uma Stack Tecnológica Moderna, garantindo alta performance, escalabilidade e manutenibilidade:
+
+*   **Frontend:** React 18+ com Vite e TypeScript estrito.
+*   **Estilização:** Tailwind CSS com sistema de variantes via class-variance-authority (CVA).
+*   **UI/UX:** Biblioteca shadcn/ui (Radix UI) com mais de 40 componentes customizados.
+*   **Gestão de Estado e Dados:** TanStack Query (React Query) para cache e sincronização; React Hook Form com Zod para validação de esquemas.
+*   **Backend as a Service (BaaS):** Supabase, utilizando PostgreSQL, GoTrue Auth e Edge Functions (Deno).
+*   **Inteligência:** Integração com IA via Edge Functions para geração de planos e vídeos.
+
+### 2. Estrutura de Diretórios e Arquitetura de Arquivos
+
+O projeto segue uma organização modular, separando responsabilidades entre lógica de negócio (hooks), interface (components) e roteamento (pages).
+
+*   **docs/**: Repositório de especificações e manuais.
+*   **src/components/**: Organizado por domínio (history, layout, planning, workout) e componentes atômicos (ui).
+*   **src/hooks/**: Abstração da lógica de comunicação com o Supabase e gerenciamento de estado global.
+*   **src/pages/**: Componentes de visualização de alto nível que compõem as rotas da aplicação.
+*   **supabase/**: Contém a infraestrutura de backend, incluindo migrations SQL e Edge Functions.
+
+### 3. Arquitetura de Roteamento e Segurança
+
+O roteamento é gerenciado pelo React Router DOM, implementando um sistema de proteção de camadas baseado no estado de autenticação do usuário.
+
+#### 3.1 Camadas de Acesso
+1.  **Rotas Públicas:** `/auth`, `/reset-password`, `/terms` e `/privacy`. Acessíveis sem token de sessão.
+2.  **Rotas Protegidas:** Enclausuradas no `AppLayout`. O sistema verifica a sessão via `useAuth`. Caso inexistente, redireciona para `/auth`.
+3.  **Fluxo de Onboarding:** Usuários autenticados, mas com a flag `onboarding_completed` como false no perfil, são forçadamente redirecionados para `/onboarding`.
+
+### 4. Camada de Páginas e Lógica de Negócio
+
+#### 4.1 Gestão de Treino (Workout.tsx)
+Esta página gerencia o ciclo de vida de uma sessão de exercício. Utiliza um sistema de estados finito: not_started, in_progress, completed e cancelled. Inclui um cronômetro persistente e uma barra de progresso em tempo real que calcula a relação entre séries concluídas e o total planejado.
+
+#### 4.2 Planejamento (Planning.tsx)
+Implementa uma interface de grade semanal interativa. A tecnologia @dnd-kit permite a reordenação de dias e exercícios via drag-and-drop. Esta página é o ponto de entrada para a Edge Function de IA, que processa o perfil do usuário para sugerir treinos otimizados.
+
+#### 4.3 Histórico e Evolução (History.tsx)
+Focada em visualização de dados. Utiliza a biblioteca Recharts para plotar gráficos de volume de carga e frequência. Gerencia a lógica de Recordes Pessoais (PRs), filtrando automaticamente a maior carga ou volume registrado por exercício na tabela pr_records.
+
+## 5. ESQUEMA DO BANCO DE DADOS (REAL — DO SQL)
+
+O esquema de dados foi extraído diretamente do ambiente de produção, refletindo a estrutura física atualizada do banco de dados PostgreSQL.
+
+### 5.1 Tabelas — esquema completo e real
+
+#### **profiles**
+| Coluna | Tipo | Default | Constraints |
+|--------|------|---------|-------------|
+| **id** | UUID | `gen_random_uuid()` | **PK** |
+| **user_id** | UUID | - | **NOT NULL, UNIQUE, FK → auth.users(id) ON DELETE CASCADE** |
+| **nome** | TEXT | - | - |
+| **unidade_peso** | TEXT | 'kg' | **CHECK ('kg', 'lb')** |
+| **equipamentos** | JSONB | '[]' | - |
+| **limitacoes** | JSONB | '[]' | - |
+| **objetivo** | TEXT | - | - |
+| **experiencia** | TEXT | - | **CHECK ('iniciante', 'intermediario', 'avancado')** |
+| **dias_semana** | INTEGER | 3 | **CHECK (1-7)** |
+| **tempo_por_dia_min** | INTEGER | 60 | **CHECK (15-180)** |
+| **preferencias** | JSONB | '{}' | - |
+| **onboarding_completed** | BOOLEAN | false | - |
+| **created_at** | TIMESTAMPTZ | `now()` | - |
+| **updated_at** | TIMESTAMPTZ | `now()` | - |
+
+#### **exercises**
+| Coluna | Tipo | Default | Constraints |
+|--------|------|---------|-------------|
+| **id** | UUID | `gen_random_uuid()` | **PK** |
+| **nome** | TEXT | - | **NOT NULL** |
+| **grupo_muscular** | TEXT | - | **NOT NULL** |
+| **equipamento** | TEXT | - | - |
+| **instrucoes** | TEXT | - | - |
+| **media_url** | TEXT | - | - |
+| **created_by** | UUID | - | **FK → auth.users(id) ON DELETE SET NULL** |
+| **is_system** | BOOLEAN | false | - |
+| **variantes** | JSONB | '[]' | - |
+| **created_at** | TIMESTAMPTZ | `now()` | - |
+
+#### **plans**
+| Coluna | Tipo | Default | Constraints |
+|--------|------|---------|-------------|
+| **id** | UUID | `gen_random_uuid()` | **PK** |
+| **user_id** | UUID | - | **NOT NULL, FK → auth.users(id) ON DELETE CASCADE** |
+| **nome** | TEXT | - | **NOT NULL** |
+| **dias_semana** | INTEGER | - | **NOT NULL, CHECK (1-7)** |
+| **tempo_por_dia_min** | INTEGER | - | **NOT NULL, CHECK (15-180)** |
+| **ativo** | BOOLEAN | true | - |
+| **created_at** | TIMESTAMPTZ | `now()` | - |
+| **updated_at** | TIMESTAMPTZ | `now()` | - |
+
+#### **plan_days**
+| Coluna | Tipo | Default | Constraints |
+|--------|------|---------|-------------|
+| **id** | UUID | `gen_random_uuid()` | **PK** |
+| **plan_id** | UUID | - | **NOT NULL, FK → plans(id) ON DELETE CASCADE** |
+| **dia_semana** | TEXT | - | **NOT NULL, CHECK ('segunda','terca','quarta','quinta','sexta','sabado','domingo')** |
+| **ordem** | INTEGER | 0 | **NOT NULL** |
+| **nome_treino** | TEXT | - | - |
+| **created_at** | TIMESTAMPTZ | `now()` | - |
+
+#### **plan_exercises**
+| Coluna | Tipo | Default | Constraints |
+|--------|------|---------|-------------|
+| **id** | UUID | `gen_random_uuid()` | **PK** |
+| **plan_day_id** | UUID | - | **NOT NULL, FK → plan_days(id) ON DELETE CASCADE** |
+| **exercise_id** | UUID | - | **NOT NULL, FK → exercises(id) ON DELETE CASCADE** |
+| **ordem** | INTEGER | 0 | **NOT NULL** |
+| **series_padrao** | INTEGER | 3 | - |
+| **reps_padrao** | INTEGER | 12 | - |
+| **descanso_padrao_seg** | INTEGER | 60 | - |
+| **carga_padrao** | NUMERIC | - | *Default target load/weight in kg* |
+| **observacoes** | TEXT | - | - |
+| **created_at** | TIMESTAMPTZ | `now()` | - |
+
+#### **workouts**
+| Coluna | Tipo | Default | Constraints |
+|--------|------|---------|-------------|
+| **id** | UUID | `gen_random_uuid()` | **PK** |
+| **user_id** | UUID | - | **NOT NULL, FK → auth.users(id) ON DELETE CASCADE** |
+| **plan_id** | UUID | - | **FK → plans(id) ON DELETE SET NULL** |
+| **plan_day_id** | UUID | - | **FK → plan_days(id) ON DELETE SET NULL** |
+| **date** | DATE | `CURRENT_DATE` | **NOT NULL** |
+| **duracao_min** | INTEGER | - | - |
+| **notas** | TEXT | - | - |
+| **concluido** | BOOLEAN | false | - |
+| **created_at** | TIMESTAMPTZ | `now()` | - |
+| **updated_at** | TIMESTAMPTZ | `now()` | - |
+
+#### **workout_exercises**
+| Coluna | Tipo | Default | Constraints |
+|--------|------|---------|-------------|
+| **id** | UUID | `gen_random_uuid()` | **PK** |
+| **workout_id** | UUID | - | **NOT NULL, FK → workouts(id) ON DELETE CASCADE** |
+| **exercise_id** | UUID | - | **NOT NULL, FK → exercises(id) ON DELETE CASCADE** |
+| **ordem** | INTEGER | 0 | **NOT NULL** |
+| **concluido** | BOOLEAN | false | - |
+| **created_at** | TIMESTAMPTZ | `now()` | - |
+
+#### **workout_sets**
+| Coluna | Tipo | Default | Constraints |
+|--------|------|---------|-------------|
+| **id** | UUID | `gen_random_uuid()` | **PK** |
+| **workout_exercise_id** | UUID | - | **NOT NULL, FK → workout_exercises(id) ON DELETE CASCADE** |
+| **num_serie** | INTEGER | - | **NOT NULL** |
+| **reps_alvo** | INTEGER | 12 | **NOT NULL** |
+| **reps_feitas** | INTEGER | - | - |
+| **carga** | NUMERIC(6,2) | - | - |
+| **rpe** | NUMERIC(3,1) | - | **CHECK (1-10)** |
+| **descanso_seg** | INTEGER | 60 | - |
+| **concluido** | BOOLEAN | false | - |
+| **created_at** | TIMESTAMPTZ | `now()` | - |
+
+#### **pr_records**
+| Coluna | Tipo | Default | Constraints |
+|--------|------|---------|-------------|
+| **id** | UUID | `gen_random_uuid()` | **PK** |
+| **user_id** | UUID | - | **NOT NULL, FK → auth.users(id) ON DELETE CASCADE** |
+| **exercise_id** | UUID | - | **NOT NULL, FK → exercises(id) ON DELETE CASCADE** |
+| **tipo** | TEXT | - | **NOT NULL, CHECK ('1rm', 'rep_max', 'volume')** |
+| **valor** | NUMERIC(8,2) | - | **NOT NULL** |
+| **reps** | INTEGER | - | - |
+| **date** | DATE | `CURRENT_DATE` | **NOT NULL** |
+| **created_at** | TIMESTAMPTZ | `now()` | - |
+
+#### **ai_suggestions**
+| Coluna | Tipo | Default | Constraints |
+|--------|------|---------|-------------|
+| **id** | UUID | `gen_random_uuid()` | **PK** |
+| **user_id** | UUID | - | **NOT NULL, FK → auth.users(id) ON DELETE CASCADE** |
+| **tipo** | TEXT | - | **NOT NULL** |
+| **payload** | JSONB | - | **NOT NULL** |
+| **accepted** | BOOLEAN | - | - |
+| **created_at** | TIMESTAMPTZ | `now()` | - |
+
+### 5.2 Políticas RLS — 34 políticas reais
+
+A segurança de dados é implementada via Row Level Security (RLS), com 34 políticas ativas distribuídas entre as tabelas:
+
+*   **profiles** (3 políticas):
+    *   *Users can view own profile*: `FOR SELECT USING (auth.uid() = user_id)`
+    *   *Users can insert own profile*: `FOR INSERT WITH CHECK (auth.uid() = user_id)`
+    *   *Users can update own profile*: `FOR UPDATE USING (auth.uid() = user_id)`
+*   **exercises** (4 políticas):
+    *   *Anyone can view system exercises*: `FOR SELECT USING (is_system = true OR auth.uid() = created_by)`
+    *   *Users can create own exercises*: `FOR INSERT WITH CHECK (auth.uid() = created_by AND is_system = false)`
+    *   *Users can update own exercises*: `FOR UPDATE USING (auth.uid() = created_by AND is_system = false)`
+    *   *Users can delete own exercises*: `FOR DELETE USING (auth.uid() = created_by AND is_system = false)`
+*   **plans** (4 políticas):
+    *   `FOR SELECT/INSERT/UPDATE/DELETE` com `auth.uid() = user_id`
+*   **plan_days** (4 políticas):
+    *   Políticas verificam `EXISTS (SELECT 1 FROM plans WHERE plans.id = plan_days.plan_id AND plans.user_id = auth.uid())`
+*   **plan_exercises** (4 políticas):
+    *   Políticas verificam `EXISTS` com `JOIN`: `plan_days` → `plans` → `auth.uid()`
+*   **workouts** (4 políticas):
+    *   `FOR SELECT/INSERT/UPDATE/DELETE` com `auth.uid() = user_id`
+*   **workout_exercises** (4 políticas):
+    *   Políticas verificam `EXISTS` via `JOIN`: `workouts` → `auth.uid()`
+*   **workout_sets** (4 políticas):
+    *   Políticas verificam `EXISTS` via `JOIN`: `workout_exercises` → `workouts` → `auth.uid()`
+*   **pr_records** (4 políticas):
+    *   `FOR SELECT/INSERT/UPDATE/DELETE` com `auth.uid() = user_id`
+*   **ai_suggestions** (4 políticas):
+    *   `FOR SELECT/INSERT/UPDATE/DELETE` com `auth.uid() = user_id`
+
+### 5.3 Índices — 10 índices reais
+
+*   **idx_profiles_user_id** ON `profiles(user_id)`
+*   **idx_plans_user_id** ON `plans(user_id)`
+*   **idx_plans_ativo** ON `plans(user_id, ativo)` — índice composto para consulta de plano ativo
+*   **idx_plan_days_plan_id** ON `plan_days(plan_id)`
+*   **idx_plan_exercises_plan_day_id** ON `plan_exercises(plan_day_id)`
+*   **idx_workouts_user_id_date** ON `workouts(user_id, date)` — índice composto para calendário de histórico
+*   **idx_workout_exercises_workout_id** ON `workout_exercises(workout_id)`
+*   **idx_workout_sets_workout_exercise_id** ON `workout_sets(workout_exercise_id)`
+*   **idx_pr_records_user_exercise** ON `pr_records(user_id, exercise_id)` — índice composto para busca de PRs
+*   **idx_exercises_grupo** ON `exercises(grupo_muscular)` — índice para filtro por grupo muscular
+
+### 5.4 Triggers — 4 triggers reais
+
+*   **set_profiles_updated_at**: `BEFORE UPDATE ON profiles` → `EXECUTE handle_updated_at()`
+*   **set_plans_updated_at**: `BEFORE UPDATE ON plans` → `EXECUTE handle_updated_at()`
+*   **set_workouts_updated_at**: `BEFORE UPDATE ON workouts` → `EXECUTE handle_updated_at()`
+*   **on_auth_user_created**: `AFTER INSERT ON auth.users` → `EXECUTE handle_new_user()`
+
+### 5.5 Funções — 2 funções reais
+
+*   **handle_updated_at()**: `RETURNS TRIGGER`, `SET NEW.updated_at = now()`, `SECURITY DEFINER`
+*   **handle_new_user()**: `RETURNS TRIGGER`, `INSERT INTO profiles(user_id) VALUES (NEW.id)`, `SECURITY DEFINER`
+
+### 5.6 Seed Data — 16 exercícios do sistema
+
+1.  **Agachamento Livre** — Pernas — Barra — *Variantes: Goblet, Smith, Frontal*
+2.  **Supino Reto** — Peito — Barra — *Variantes: Halteres, Inclinado, Flexão*
+3.  **Remada Curvada** — Costas — Barra — *Variantes: Halter, Cavalinho, Baixa*
+4.  **Levantamento Terra** — Posterior — Barra — *Variantes: Romeno, Stiff, Sumo*
+5.  **Desenvolvimento Militar** — Ombros — Barra — *Variantes: Halteres, Arnold Press, Elevação Frontal*
+6.  **Puxada na Frente** — Costas — Cabo — *Variantes: Supinada, Neutra, Pull-up*
+7.  **Rosca Direta** — Bíceps — Barra — *Variantes: Alternada, Martelo, Scott*
+8.  **Tríceps Testa** — Tríceps — Barra EZ — *Variantes: Pulley, Francês, Mergulho*
+9.  **Flexão de Braço** — Peito — Peso Corporal — *Variantes: Inclinada, Diamante, Apoio*
+10. **Remada Baixa** — Costas — Cabo — *Variantes: Unilateral, Halter, Curvada*
+11. **Afundo** — Pernas — Halteres — *Variantes: Búlgaro, Reverso, Passada*
+12. **Elevação Lateral** — Ombros — Halteres — *Variantes: Cabo, Frontal, Crucifixo Inverso*
+13. **Leg Press** — Pernas — Máquina — *Variantes: Hack, Livre, Extensora*
+14. **Cadeira Extensora** — Quadríceps — Máquina — *Variantes: Agachamento, Leg Press, Afundo*
+15. **Mesa Flexora** — Posterior — Máquina — *Variantes: Stiff, Romeno, Good Morning*
+16. **Panturrilha em Pé** — Panturrilha — Máquina — *Variantes: Sentado, Leg Press, Livre*
+
+### 5.7 Grupos Musculares (extraídos do seed)
+Pernas, Peito, Costas, Posterior, Ombros, Bíceps, Tríceps, Quadríceps, Panturrilha
+
+### 5.8 Equipamentos (extraídos do seed)
+Barra, Barra EZ, Halteres, Cabo, Máquina, Peso Corporal
+
+## 6. RELACIONAMENTOS ENTRE TABELAS (Diagrama de Dependências)
+
+Abaixo, a representação visual da hierarquia e dependências do banco de dados:
+
+**auth.users**
+├── **profiles** (1:1 — *user_id*)
+├── **plans** (1:N — *user_id*)
+├── **workouts** (1:N — *user_id*)
+├── **exercises** (1:N — *created_by*, opcional)
+├── **pr_records** (1:N — *user_id*)
+└── **ai_suggestions** (1:N — *user_id*)
+
+**plans**
+└── **plan_days** (1:N — *plan_id*)
+    └── **plan_exercises** (1:N — *plan_day_id*)
+        └── **exercises** (N:1 — *exercise_id*)
+
+**workouts**
+├── **plan_days** (N:1 — *plan_day_id*, opcional)
+└── **workout_exercises** (1:N — *workout_id*)
+    └── **workout_sets** (1:N — *workout_exercise_id*)
+
+## 7. FLUXOS OPERACIONAIS ATUALIZADOS
+
+### 7.1 Ciclo de Onboarding
+1.  Usuário faz **signUp** → trigger `on_auth_user_created` cria registro automático em **profiles**.
+2.  Redirecionado para `/onboarding` (wizard de 5 passos).
+3.  Ao final: `UPDATE profiles SET onboarding_completed = true`.
+4.  Chamada à Edge Function **ai-coach** com dados do perfil.
+5.  Sugestão armazenada em **ai_suggestions** (tipo = 'workout_plan').
+6.  Se aceita: `INSERT` em **plans** + **plan_days** + **plan_exercises**.
+
+### 7.2 Execução de Treino
+1.  Home consulta planos ativos via índice `idx_plans_ativo`.
+2.  Match entre `plan_days.dia_semana` e o dia atual do sistema.
+3.  Ao iniciar: `INSERT` em **workouts** + **workout_exercises** + **workout_sets** (pré-preenchidos com `reps_alvo`, `carga_padrao`, `descanso_padrao_seg` do **plan_exercises**).
+4.  Durante: `UPDATE workout_sets` SET `reps_feitas`, `carga`, `rpe`, `concluido`.
+5.  Ao finalizar: `UPDATE workouts` SET `concluido = true`, `duracao_min`.
+6.  Verificação de PRs: `INSERT` em **pr_records** se a performance superar o recorde anterior.
+
+### 7.3 Recordes Pessoais (PRs)
+*   **Tipos:** '1rm' (uma repetição máxima), 'rep_max' (máximo de repetições), 'volume' (carga × reps).
+*   Verificação automática disparada ao finalizar o treino.
+*   O índice `idx_pr_records_user_exercise` otimiza a consulta de comparação histórica.
+
+### 7.4 Geração de Plano via IA
+*   A Edge Function **ai-coach** recebe o payload completo do perfil do usuário.
+*   Retorna um payload **JSONB** estruturado que é armazenado em **ai_suggestions**.
+*   O usuário tem a opção de aceitar (`accepted = true`) ou recusar (`accepted = false`).
+*   Em caso de aceite, o sistema popula automaticamente a estrutura de **plans**, **plan_days** e **plan_exercises**.
+
+## 8. DIFERENÇAS ENTRE O CÓDIGO E O BANCO (Descobertas Importantes)
+
+Durante a auditoria do schema real, foram identificadas as seguintes divergências e particularidades técnicas:
+
+*   **Carga Padrão:** O schema REAL possui a coluna `carga_padrao` em `plan_exercises` (adicionada via *ALTER TABLE*), funcionalidade que não estava mapeada nos hooks iniciais.
+*   **Tipologia de PRs:** A tabela `pr_records.tipo` aceita estritamente os valores `'1rm'`, `'rep_max'` e `'volume'`, divergindo das nomenclaturas sugeridas anteriormente ('carga_máxima', etc).
+*   **Métrica RPE:** A tabela `workout_sets` inclui a coluna `rpe` (*Rating of Perceived Exertion*) com uma constraint de `CHECK 1-10`, permitindo o monitoramento da intensidade subjetiva.
+*   **Segurança Granular:** As políticas RLS de tabelas filhas (`plan_days`, `workout_sets`, etc) utilizam subqueries complexas com `EXISTS` e `JOIN`, garantindo que a segurança se propague corretamente pela hierarquia de IDs.
+*   **Variantes de Exercícios:** Os 16 exercícios *seed* do sistema já incluem variantes estruturadas em formato **JSONB**, permitindo a expansão dinâmica de opções para o usuário.
+*   **Infraestrutura de Triggers:** Existem 4 triggers ativos, sendo 3 para automação de `updated_at` e 1 crítico para a criação de perfis via `auth.users`.
+*   **Otimização de Índices:** O sistema opera com 10 índices reais focados em performance de calendário e busca de recordes, uma estrutura mais enxuta que a estimativa inicial de 21.
+
+---
+
+
+Engenharia de Sistemas - TreinoSuporte
+
+Documento gerado em 23 de julho de 2026.

@@ -1,0 +1,163 @@
+Desenvolvimento de Sistemas de Alta Performance
+
+DOCUMENTAÇÃO TÉCNICA: SISTEMA TREINOSUPORTE
+
+Arquitetura, Estrutura de Dados e Fluxos de Implementação
+
+23 de julho de 2026
+
+---
+
+### 1. VISÃO GERAL DO SISTEMA
+
+O TreinoSuporte é uma aplicação web progressiva voltada para a gestão de rotinas de treinamento físico, projetada com foco em usabilidade mobile-first e alta performance. O sistema permite que usuários planejem seus treinos semanais, acompanhem a execução de exercícios em tempo real e monitorem seu progresso histórico através de visualizações de dados.
+
+A arquitetura foi concebida utilizando o ecossistema moderno de JavaScript/TypeScript, garantindo tipagem estática em toda a aplicação e uma integração fluida entre o frontend e a camada de persistência. A stack tecnológica compreende:
+
+*   **Frontend:** React com Vite para build otimizado e TypeScript para segurança de tipos.
+*   **Estilização:** Tailwind CSS para design utility-first e responsividade.
+*   **Interface:** shadcn/ui (baseado em Radix UI primitives) para componentes acessíveis e consistentes.
+*   **Backend & Auth:** Supabase (PostgreSQL + GoTrue) para autenticação, banco de dados em tempo real e armazenamento.
+*   **Roteamento:** React Router para gerenciamento de navegação SPA (Single Page Application).
+
+### 2. ESTRUTURA DE DIRETÓRIOS
+
+src/
+├── components/
+│   ├── layout/
+│   ├── planning/
+│   ├── ui/
+│   └── workout/
+├── hooks/
+├── integrations/
+│   └── supabase/
+├── lib/
+├── pages/
+├── test/
+├── App.css
+├── App.tsx
+├── index.css
+├── main.tsx
+└── vite-env.d.ts
+
+
+### 3. CAMADA DE PÁGINAS (/pages)
+
+A camada de páginas concentra os pontos de entrada da aplicação, onde a lógica de negócio é orquestrada através de hooks e os componentes são compostos para formar a interface do usuário.
+
+*   **Auth.tsx:** Gerencia os fluxos de autenticação, incluindo login e criação de novas contas via Supabase Auth.
+*   **Home.tsx:** Dashboard principal que apresenta um resumo das atividades do dia e atalhos rápidos.
+*   **Index.tsx:** Atua como a landing page inicial ou redirecionador de estado de autenticação.
+*   **Workout.tsx:** Interface de execução de treino ativo, com cronômetros e marcação de séries concluídas.
+*   **Planning.tsx:** Central de planejamento onde o usuário monta sua grade semanal de treinos.
+*   **Exercises.tsx:** Biblioteca e gerenciamento de exercícios disponíveis no catálogo do usuário.
+*   **History.tsx:** Visualização cronológica de treinos passados e métricas de evolução.
+*   **Profile.tsx:** Gestão de dados pessoais, preferências do sistema e logout.
+*   **Onboarding.tsx:** Fluxo guiado para novos usuários configurarem seus primeiros parâmetros de treino.
+*   **ResetPassword.tsx:** Interface para recuperação de acesso e definição de nova senha.
+*   **Terms.tsx / Privacy.tsx:** Documentação legal e políticas de conformidade de dados.
+*   **NotFound.tsx:** Tratamento de rotas inexistentes (Erro 404).
+
+### 4. CAMADA DE COMPONENTES (/components)
+
+#### 4.1 Layout
+Componentes estruturais que definem a moldura da aplicação. O AppLayout.tsx envolve as rotas protegidas, enquanto o BottomNav.tsx provê a navegação principal otimizada para o polegar em dispositivos móveis.
+
+#### 4.2 Workout (Treino Ativo)
+Focados na experiência de execução. O TodayWorkout.tsx filtra a carga do dia, o ExerciseViewer.tsx detalha a execução técnica e o AddExerciseSheet.tsx permite ajustes dinâmicos durante a sessão.
+
+#### 4.3 Planning (Planejamento)
+Componentes complexos para gestão de dados. O WeeklyGrid.tsx oferece uma visão macro da semana, enquanto modais como ExerciseParamsModal.tsx permitem o ajuste fino de repetições, carga e descanso.
+
+#### 4.4 UI (shadcn/ui)
+O sistema utiliza uma biblioteca de componentes atômicos baseada em Radix UI, garantindo acessibilidade (WAI-ARIA). A lista inclui: Accordion, Alert, AlertDialog, AspectRatio, Avatar, Badge, Breadcrumb, Button, Calendar, Card, Carousel, Checkbox, Collapsible, Command, ContextMenu, Dialog, Drawer, DropdownMenu, Form, HoverCard, Input, InputOTP, Label, Menubar, NavigationMenu, Pagination, Popover, Progress, RadioGroup, ScrollArea, Select, Separator, Sheet, Skeleton, Slider, Switch, Table, Tabs, Textarea, Toast, Toggle, Tooltip.
+
+### 5. CAMADA DE HOOKS (/hooks)
+
+Os hooks customizados isolam a lógica de comunicação com o Supabase e o gerenciamento de estado complexo, permitindo que os componentes permaneçam puramente declarativos.
+
+*   **useAuth.tsx:** Provê o contexto de autenticação e métodos de login/logout.
+*   **useExercises.tsx:** Abstrai o CRUD de exercícios e filtragem por categorias.
+*   **usePlans.tsx:** Gerencia a lógica de criação e edição de cronogramas semanais.
+*   **useWorkouts.tsx:** Controla o estado da sessão de treino ativa e persistência de séries.
+*   **useProfile.tsx:** Sincroniza os dados do perfil do usuário entre o banco e a UI.
+*   **use-mobile.tsx:** Utilitário para detecção de viewport e adaptação de componentes.
+*   **use-toast.ts:** Interface programática para disparar notificações de feedback ao usuário.
+
+### 6. INTEGRAÇÃO E UTILITÁRIOS
+
+#### 6.1 Supabase (/integrations/supabase)
+O arquivo client.ts inicializa o singleton do cliente Supabase utilizando variáveis de ambiente. O arquivo types.ts contém as definições geradas automaticamente via CLI do Supabase, garantindo que as consultas ao banco sejam tipadas de ponta a ponta.
+
+#### 6.2 Lib (/lib)
+Contém o utilitário utils.ts, que exporta a função cn(). Esta função combina clsx e tailwind-merge, permitindo a concatenação condicional de classes CSS sem conflitos de especificidade do Tailwind.
+
+### 7. FLUXO DE NAVEGAÇÃO
+
+O fluxo do usuário é projetado para minimizar a fricção desde o acesso até o início da atividade física:
+
+1.  **Acesso:** O usuário passa pelo Auth; se for o primeiro acesso, é direcionado ao Onboarding.
+2.  **Dashboard:** A Home apresenta o treino do dia. Um clique inicia a sessão em Workout.
+3.  **Gestão:** Através do BottomNav, o usuário alterna entre Planning (ajuste de rotina), Exercises (consulta técnica) e History (análise de performance).
+4.  **Configuração:** O Profile permite ajustes de conta e segurança.
+
+### 8. ARQUITETURA DE DADOS (SUPABASE)
+
+O modelo relacional no PostgreSQL foi estruturado para suportar a flexibilidade de planos de treino:
+
+
+
+
+Tabela
+Descrição
+
+
+
+
+profiles
+Dados estendidos do usuário (nome, bio, metas).
+
+
+exercises
+Catálogo global e personalizado de exercícios.
+
+
+workout_plans
+Cabeçalho do plano de treino (ex: "Hipertrofia ABC").
+
+
+workout_days
+Associação de planos a dias da semana (Segunda, Terça...).
+
+
+workout_exercises
+Vínculo de exercícios a dias com metas de reps/séries.
+
+
+workout_sessions
+Registro de cada treino efetivamente realizado.
+
+
+workout_sets
+Dados reais de carga e reps executadas em cada série.
+
+
+
+
+### 9. PADRÕES DE CÓDIGO E BOAS PRÁTICAS
+
+O desenvolvimento do TreinoSuporte segue rigorosos padrões de engenharia de software para garantir manutenibilidade:
+
+*   **Tipagem Estrita:** Uso de interfaces e tipos para todas as propriedades de componentes e retornos de API.
+*   **Componentização:** Divisão de interfaces complexas em componentes menores e reutilizáveis (Atomic Design adaptado).
+*   **Mobile-First:** Priorização de layouts que funcionam perfeitamente em telas pequenas, utilizando drawers e sheets em vez de modais pesados.
+*   **Performance:** Utilização de estratégias de cache e invalidação de dados via hooks para evitar re-renders desnecessários.
+
+---
+
+          
+COORDENAÇÃO TÉCNICA                                                DESENVOLVIMENTO LEAD
+
+Local e data: São Paulo, 23 de julho de 2026
+
+*Documento elaborado em 23 de julho de 2026. As informações contidas são de responsabilidade do solicitante.*

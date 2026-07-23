@@ -1,0 +1,246 @@
+-- 1. VER TABELAS EXISTENTES
+| table_name        | table_type |
+| ----------------- | ---------- |
+| ai_suggestions    | BASE TABLE |
+| exercises         | BASE TABLE |
+| plan_days         | BASE TABLE |
+| plan_exercises    | BASE TABLE |
+| plans             | BASE TABLE |
+| pr_records        | BASE TABLE |
+| profiles          | BASE TABLE |
+| workout_exercises | BASE TABLE |
+| workout_sets      | BASE TABLE |
+| workouts          | BASE TABLE |
+
+-- 2. VER COLUNAS DE CADA TABELA
+| table_name        | column_name          | data_type                | is_nullable | column_default    | character_maximum_length |
+| ----------------- | -------------------- | ------------------------ | ----------- | ----------------- | ------------------------ |
+| ai_suggestions    | id                   | uuid                     | NO          | gen_random_uuid() | null                     |
+| ai_suggestions    | user_id              | uuid                     | NO          | null              | null                     |
+| ai_suggestions    | tipo                 | text                     | NO          | null              | null                     |
+| ai_suggestions    | payload              | jsonb                    | NO          | null              | null                     |
+| ai_suggestions    | accepted             | boolean                  | YES         | null              | null                     |
+| ai_suggestions    | created_at           | timestamp with time zone | YES         | now()             | null                     |
+| exercises         | id                   | uuid                     | NO          | gen_random_uuid() | null                     |
+| exercises         | nome                 | text                     | NO          | null              | null                     |
+| exercises         | grupo_muscular       | text                     | NO          | null              | null                     |
+| exercises         | equipamento          | text                     | YES         | null              | null                     |
+| exercises         | instrucoes           | text                     | YES         | null              | null                     |
+| exercises         | media_url            | text                     | YES         | null              | null                     |
+| exercises         | created_by           | uuid                     | YES         | null              | null                     |
+| exercises         | is_system            | boolean                  | YES         | false             | null                     |
+| exercises         | variantes            | jsonb                    | YES         | '[]'::jsonb       | null                     |
+| exercises         | created_at           | timestamp with time zone | YES         | now()             | null                     |
+| plan_days         | id                   | uuid                     | NO          | gen_random_uuid() | null                     |
+| plan_days         | plan_id              | uuid                     | NO          | null              | null                     |
+| plan_days         | dia_semana           | text                     | NO          | null              | null                     |
+| plan_days         | ordem                | integer                  | NO          | 0                 | null                     |
+| plan_days         | nome_treino          | text                     | YES         | null              | null                     |
+| plan_days         | created_at           | timestamp with time zone | YES         | now()             | null                     |
+| plan_exercises    | id                   | uuid                     | NO          | gen_random_uuid() | null                     |
+| plan_exercises    | plan_day_id          | uuid                     | NO          | null              | null                     |
+| plan_exercises    | exercise_id          | uuid                     | NO          | null              | null                     |
+| plan_exercises    | ordem                | integer                  | NO          | 0                 | null                     |
+| plan_exercises    | series_padrao        | integer                  | YES         | 3                 | null                     |
+| plan_exercises    | reps_padrao          | integer                  | YES         | 12                | null                     |
+| plan_exercises    | descanso_padrao_seg  | integer                  | YES         | 60                | null                     |
+| plan_exercises    | observacoes          | text                     | YES         | null              | null                     |
+| plan_exercises    | created_at           | timestamp with time zone | YES         | now()             | null                     |
+| plan_exercises    | carga_padrao         | numeric                  | YES         | null              | null                     |
+| plans             | id                   | uuid                     | NO          | gen_random_uuid() | null                     |
+| plans             | user_id              | uuid                     | NO          | null              | null                     |
+| plans             | nome                 | text                     | NO          | null              | null                     |
+| plans             | dias_semana          | integer                  | NO          | null              | null                     |
+| plans             | tempo_por_dia_min    | integer                  | NO          | null              | null                     |
+| plans             | ativo                | boolean                  | YES         | true              | null                     |
+| plans             | created_at           | timestamp with time zone | YES         | now()             | null                     |
+| plans             | updated_at           | timestamp with time zone | YES         | now()             | null                     |
+| pr_records        | id                   | uuid                     | NO          | gen_random_uuid() | null                     |
+| pr_records        | user_id              | uuid                     | NO          | null              | null                     |
+| pr_records        | exercise_id          | uuid                     | NO          | null              | null                     |
+| pr_records        | tipo                 | text                     | NO          | null              | null                     |
+| pr_records        | valor                | numeric                  | NO          | null              | null                     |
+| pr_records        | reps                 | integer                  | YES         | null              | null                     |
+| pr_records        | date                 | date                     | NO          | CURRENT_DATE      | null                     |
+| pr_records        | created_at           | timestamp with time zone | YES         | now()             | null                     |
+| profiles          | id                   | uuid                     | NO          | gen_random_uuid() | null                     |
+| profiles          | user_id              | uuid                     | NO          | null              | null                     |
+| profiles          | nome                 | text                     | YES         | null              | null                     |
+| profiles          | unidade_peso         | text                     | YES         | 'kg'::text        | null                     |
+| profiles          | equipamentos         | jsonb                    | YES         | '[]'::jsonb       | null                     |
+| profiles          | limitacoes           | jsonb                    | YES         | '[]'::jsonb       | null                     |
+| profiles          | objetivo             | text                     | YES         | null              | null                     |
+| profiles          | experiencia          | text                     | YES         | null              | null                     |
+| profiles          | dias_semana          | integer                  | YES         | 3                 | null                     |
+| profiles          | tempo_por_dia_min    | integer                  | YES         | 60                | null                     |
+| profiles          | preferencias         | jsonb                    | YES         | '{}'::jsonb       | null                     |
+| profiles          | onboarding_completed | boolean                  | YES         | false             | null                     |
+| profiles          | created_at           | timestamp with time zone | YES         | now()             | null                     |
+| profiles          | updated_at           | timestamp with time zone | YES         | now()             | null                     |
+| workout_exercises | id                   | uuid                     | NO          | gen_random_uuid() | null                     |
+| workout_exercises | workout_id           | uuid                     | NO          | null              | null                     |
+| workout_exercises | exercise_id          | uuid                     | NO          | null              | null                     |
+| workout_exercises | ordem                | integer                  | NO          | 0                 | null                     |
+| workout_exercises | concluido            | boolean                  | YES         | false             | null                     |
+| workout_exercises | created_at           | timestamp with time zone | YES         | now()             | null                     |
+| workout_sets      | id                   | uuid                     | NO          | gen_random_uuid() | null                     |
+| workout_sets      | workout_exercise_id  | uuid                     | NO          | null              | null                     |
+| workout_sets      | num_serie            | integer                  | NO          | null              | null                     |
+| workout_sets      | reps_alvo            | integer                  | NO          | 12                | null                     |
+| workout_sets      | reps_feitas          | integer                  | YES         | null              | null                     |
+| workout_sets      | carga                | numeric                  | YES         | null              | null                     |
+| workout_sets      | rpe                  | numeric                  | YES         | null              | null                     |
+| workout_sets      | descanso_seg         | integer                  | YES         | 60                | null                     |
+| workout_sets      | concluido            | boolean                  | YES         | false             | null                     |
+| workout_sets      | created_at           | timestamp with time zone | YES         | now()             | null                     |
+| workouts          | id                   | uuid                     | NO          | gen_random_uuid() | null                     |
+| workouts          | user_id              | uuid                     | NO          | null              | null                     |
+| workouts          | plan_id              | uuid                     | YES         | null              | null                     |
+| workouts          | plan_day_id          | uuid                     | YES         | null              | null                     |
+| workouts          | date                 | date                     | NO          | CURRENT_DATE      | null                     |
+| workouts          | duracao_min          | integer                  | YES         | null              | null                     |
+| workouts          | notas                | text                     | YES         | null              | null                     |
+| workouts          | concluido            | boolean                  | YES         | false             | null                     |
+| workouts          | created_at           | timestamp with time zone | YES         | now()             | null                     |
+| workouts          | updated_at           | timestamp with time zone | YES         | now()             | null                     |
+
+-- 3. VER CHAVES ESTRANGEIRAS
+| table_name        | column_name         | foreign_table_name | foreign_column_name |
+| ----------------- | ------------------- | ------------------ | ------------------- |
+| pr_records        | exercise_id         | exercises          | id                  |
+| workout_sets      | workout_exercise_id | workout_exercises  | id                  |
+| workout_exercises | exercise_id         | exercises          | id                  |
+| plan_days         | plan_id             | plans              | id                  |
+| plan_exercises    | plan_day_id         | plan_days          | id                  |
+| plan_exercises    | exercise_id         | exercises          | id                  |
+| workouts          | plan_id             | plans              | id                  |
+| workouts          | plan_day_id         | plan_days          | id                  |
+| workout_exercises | workout_id          | workouts           | id                  |
+
+-- 4. VER FUNÇÕES E TRIGGERS
+| routine_name      | routine_type | return_type |
+| ----------------- | ------------ | ----------- |
+| handle_new_user   | FUNCTION     | trigger     |
+| handle_updated_at | FUNCTION     | trigger     |
+-- 5. VER POLÍTICAS DE SEGURANÇA (RLS)
+| schemaname | tablename         | policyname                             | permissive | roles    | cmd    | qual                                                                                                                                                                                   | with_check                                                                                                                                                                             |
+| ---------- | ----------------- | -------------------------------------- | ---------- | -------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| public     | ai_suggestions    | Users can create own AI suggestions    | PERMISSIVE | {public} | INSERT | null                                                                                                                                                                                   | (auth.uid() = user_id)                                                                                                                                                                 |
+| public     | ai_suggestions    | Users can update own AI suggestions    | PERMISSIVE | {public} | UPDATE | (auth.uid() = user_id)                                                                                                                                                                 | null                                                                                                                                                                                   |
+| public     | ai_suggestions    | Users can view own AI suggestions      | PERMISSIVE | {public} | SELECT | (auth.uid() = user_id)                                                                                                                                                                 | null                                                                                                                                                                                   |
+| public     | exercises         | Anyone can view system exercises       | PERMISSIVE | {public} | SELECT | ((is_system = true) OR (auth.uid() = created_by))                                                                                                                                      | null                                                                                                                                                                                   |
+| public     | exercises         | Users can create own exercises         | PERMISSIVE | {public} | INSERT | null                                                                                                                                                                                   | ((auth.uid() = created_by) AND (is_system = false))                                                                                                                                    |
+| public     | exercises         | Users can delete own exercises         | PERMISSIVE | {public} | DELETE | ((auth.uid() = created_by) AND (is_system = false))                                                                                                                                    | null                                                                                                                                                                                   |
+| public     | exercises         | Users can update own exercises         | PERMISSIVE | {public} | UPDATE | ((auth.uid() = created_by) OR ((is_system = true) AND (auth.role() = 'authenticated'::text)))                                                                                          | null                                                                                                                                                                                   |
+| public     | plan_days         | Users can create own plan days         | PERMISSIVE | {public} | INSERT | null                                                                                                                                                                                   | (EXISTS ( SELECT 1
+   FROM plans
+  WHERE ((plans.id = plan_days.plan_id) AND (plans.user_id = auth.uid()))))                                                                           |
+| public     | plan_days         | Users can delete own plan days         | PERMISSIVE | {public} | DELETE | (EXISTS ( SELECT 1
+   FROM plans
+  WHERE ((plans.id = plan_days.plan_id) AND (plans.user_id = auth.uid()))))                                                                           | null                                                                                                                                                                                   |
+| public     | plan_days         | Users can update own plan days         | PERMISSIVE | {public} | UPDATE | (EXISTS ( SELECT 1
+   FROM plans
+  WHERE ((plans.id = plan_days.plan_id) AND (plans.user_id = auth.uid()))))                                                                           | null                                                                                                                                                                                   |
+| public     | plan_days         | Users can view own plan days           | PERMISSIVE | {public} | SELECT | (EXISTS ( SELECT 1
+   FROM plans
+  WHERE ((plans.id = plan_days.plan_id) AND (plans.user_id = auth.uid()))))                                                                           | null                                                                                                                                                                                   |
+| public     | plan_exercises    | Users can create own plan exercises    | PERMISSIVE | {public} | INSERT | null                                                                                                                                                                                   | (EXISTS ( SELECT 1
+   FROM (plan_days pd
+     JOIN plans p ON ((p.id = pd.plan_id)))
+  WHERE ((pd.id = plan_exercises.plan_day_id) AND (p.user_id = auth.uid()))))                     |
+| public     | plan_exercises    | Users can delete own plan exercises    | PERMISSIVE | {public} | DELETE | (EXISTS ( SELECT 1
+   FROM (plan_days pd
+     JOIN plans p ON ((p.id = pd.plan_id)))
+  WHERE ((pd.id = plan_exercises.plan_day_id) AND (p.user_id = auth.uid()))))                     | null                                                                                                                                                                                   |
+| public     | plan_exercises    | Users can update own plan exercises    | PERMISSIVE | {public} | UPDATE | (EXISTS ( SELECT 1
+   FROM (plan_days pd
+     JOIN plans p ON ((p.id = pd.plan_id)))
+  WHERE ((pd.id = plan_exercises.plan_day_id) AND (p.user_id = auth.uid()))))                     | null                                                                                                                                                                                   |
+| public     | plan_exercises    | Users can view own plan exercises      | PERMISSIVE | {public} | SELECT | (EXISTS ( SELECT 1
+   FROM (plan_days pd
+     JOIN plans p ON ((p.id = pd.plan_id)))
+  WHERE ((pd.id = plan_exercises.plan_day_id) AND (p.user_id = auth.uid()))))                     | null                                                                                                                                                                                   |
+| public     | plans             | Users can create own plans             | PERMISSIVE | {public} | INSERT | null                                                                                                                                                                                   | (auth.uid() = user_id)                                                                                                                                                                 |
+| public     | plans             | Users can delete own plans             | PERMISSIVE | {public} | DELETE | (auth.uid() = user_id)                                                                                                                                                                 | null                                                                                                                                                                                   |
+| public     | plans             | Users can update own plans             | PERMISSIVE | {public} | UPDATE | (auth.uid() = user_id)                                                                                                                                                                 | null                                                                                                                                                                                   |
+| public     | plans             | Users can view own plans               | PERMISSIVE | {public} | SELECT | (auth.uid() = user_id)                                                                                                                                                                 | null                                                                                                                                                                                   |
+| public     | pr_records        | Users can create own PRs               | PERMISSIVE | {public} | INSERT | null                                                                                                                                                                                   | (auth.uid() = user_id)                                                                                                                                                                 |
+| public     | pr_records        | Users can delete own PRs               | PERMISSIVE | {public} | DELETE | (auth.uid() = user_id)                                                                                                                                                                 | null                                                                                                                                                                                   |
+| public     | pr_records        | Users can update own PRs               | PERMISSIVE | {public} | UPDATE | (auth.uid() = user_id)                                                                                                                                                                 | null                                                                                                                                                                                   |
+| public     | pr_records        | Users can view own PRs                 | PERMISSIVE | {public} | SELECT | (auth.uid() = user_id)                                                                                                                                                                 | null                                                                                                                                                                                   |
+| public     | profiles          | Users can insert own profile           | PERMISSIVE | {public} | INSERT | null                                                                                                                                                                                   | (auth.uid() = user_id)                                                                                                                                                                 |
+| public     | profiles          | Users can update own profile           | PERMISSIVE | {public} | UPDATE | (auth.uid() = user_id)                                                                                                                                                                 | null                                                                                                                                                                                   |
+| public     | profiles          | Users can view own profile             | PERMISSIVE | {public} | SELECT | (auth.uid() = user_id)                                                                                                                                                                 | null                                                                                                                                                                                   |
+| public     | workout_exercises | Users can create own workout exercises | PERMISSIVE | {public} | INSERT | null                                                                                                                                                                                   | (EXISTS ( SELECT 1
+   FROM workouts
+  WHERE ((workouts.id = workout_exercises.workout_id) AND (workouts.user_id = auth.uid()))))                                                       |
+| public     | workout_exercises | Users can delete own workout exercises | PERMISSIVE | {public} | DELETE | (EXISTS ( SELECT 1
+   FROM workouts
+  WHERE ((workouts.id = workout_exercises.workout_id) AND (workouts.user_id = auth.uid()))))                                                       | null                                                                                                                                                                                   |
+| public     | workout_exercises | Users can update own workout exercises | PERMISSIVE | {public} | UPDATE | (EXISTS ( SELECT 1
+   FROM workouts
+  WHERE ((workouts.id = workout_exercises.workout_id) AND (workouts.user_id = auth.uid()))))                                                       | null                                                                                                                                                                                   |
+| public     | workout_exercises | Users can view own workout exercises   | PERMISSIVE | {public} | SELECT | (EXISTS ( SELECT 1
+   FROM workouts
+  WHERE ((workouts.id = workout_exercises.workout_id) AND (workouts.user_id = auth.uid()))))                                                       | null                                                                                                                                                                                   |
+| public     | workout_sets      | Users can create own workout sets      | PERMISSIVE | {public} | INSERT | null                                                                                                                                                                                   | (EXISTS ( SELECT 1
+   FROM (workout_exercises we
+     JOIN workouts w ON ((w.id = we.workout_id)))
+  WHERE ((we.id = workout_sets.workout_exercise_id) AND (w.user_id = auth.uid())))) |
+| public     | workout_sets      | Users can delete own workout sets      | PERMISSIVE | {public} | DELETE | (EXISTS ( SELECT 1
+   FROM (workout_exercises we
+     JOIN workouts w ON ((w.id = we.workout_id)))
+  WHERE ((we.id = workout_sets.workout_exercise_id) AND (w.user_id = auth.uid())))) | null                                                                                                                                                                                   |
+| public     | workout_sets      | Users can update own workout sets      | PERMISSIVE | {public} | UPDATE | (EXISTS ( SELECT 1
+   FROM (workout_exercises we
+     JOIN workouts w ON ((w.id = we.workout_id)))
+  WHERE ((we.id = workout_sets.workout_exercise_id) AND (w.user_id = auth.uid())))) | null                                                                                                                                                                                   |
+| public     | workout_sets      | Users can view own workout sets        | PERMISSIVE | {public} | SELECT | (EXISTS ( SELECT 1
+   FROM (workout_exercises we
+     JOIN workouts w ON ((w.id = we.workout_id)))
+  WHERE ((we.id = workout_sets.workout_exercise_id) AND (w.user_id = auth.uid())))) | null                                                                                                                                                                                   |
+| public     | workouts          | Users can create own workouts          | PERMISSIVE | {public} | INSERT | null                                                                                                                                                                                   | (auth.uid() = user_id)                                                                                                                                                                 |
+| public     | workouts          | Users can delete own workouts          | PERMISSIVE | {public} | DELETE | (auth.uid() = user_id)                                                                                                                                                                 | null                                                                                                                                                                                   |
+| public     | workouts          | Users can update own workouts          | PERMISSIVE | {public} | UPDATE | (auth.uid() = user_id)                                                                                                                                                                 | null                                                                                                                                                                                   |
+| public     | workouts          | Users can view own workouts            | PERMISSIVE | {public} | SELECT | (auth.uid() = user_id)                                                                                                                                                                 | null                                                                                                                                                                                   |
+
+-- 6. VER ÍNDICES
+| tablename         | indexname                            | indexdef                                                                                                   |
+| ----------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| ai_suggestions    | ai_suggestions_pkey                  | CREATE UNIQUE INDEX ai_suggestions_pkey ON public.ai_suggestions USING btree (id)                          |
+| exercises         | exercises_pkey                       | CREATE UNIQUE INDEX exercises_pkey ON public.exercises USING btree (id)                                    |
+| exercises         | idx_exercises_grupo                  | CREATE INDEX idx_exercises_grupo ON public.exercises USING btree (grupo_muscular)                          |
+| plan_days         | idx_plan_days_plan_id                | CREATE INDEX idx_plan_days_plan_id ON public.plan_days USING btree (plan_id)                               |
+| plan_days         | plan_days_pkey                       | CREATE UNIQUE INDEX plan_days_pkey ON public.plan_days USING btree (id)                                    |
+| plan_exercises    | idx_plan_exercises_plan_day_id       | CREATE INDEX idx_plan_exercises_plan_day_id ON public.plan_exercises USING btree (plan_day_id)             |
+| plan_exercises    | plan_exercises_pkey                  | CREATE UNIQUE INDEX plan_exercises_pkey ON public.plan_exercises USING btree (id)                          |
+| plans             | idx_plans_ativo                      | CREATE INDEX idx_plans_ativo ON public.plans USING btree (user_id, ativo)                                  |
+| plans             | idx_plans_user_id                    | CREATE INDEX idx_plans_user_id ON public.plans USING btree (user_id)                                       |
+| plans             | plans_pkey                           | CREATE UNIQUE INDEX plans_pkey ON public.plans USING btree (id)                                            |
+| pr_records        | idx_pr_records_user_exercise         | CREATE INDEX idx_pr_records_user_exercise ON public.pr_records USING btree (user_id, exercise_id)          |
+| pr_records        | pr_records_pkey                      | CREATE UNIQUE INDEX pr_records_pkey ON public.pr_records USING btree (id)                                  |
+| profiles          | idx_profiles_user_id                 | CREATE INDEX idx_profiles_user_id ON public.profiles USING btree (user_id)                                 |
+| profiles          | profiles_pkey                        | CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id)                                      |
+| profiles          | profiles_user_id_key                 | CREATE UNIQUE INDEX profiles_user_id_key ON public.profiles USING btree (user_id)                          |
+| workout_exercises | idx_workout_exercises_workout_id     | CREATE INDEX idx_workout_exercises_workout_id ON public.workout_exercises USING btree (workout_id)         |
+| workout_exercises | workout_exercises_pkey               | CREATE UNIQUE INDEX workout_exercises_pkey ON public.workout_exercises USING btree (id)                    |
+| workout_sets      | idx_workout_sets_workout_exercise_id | CREATE INDEX idx_workout_sets_workout_exercise_id ON public.workout_sets USING btree (workout_exercise_id) |
+| workout_sets      | workout_sets_pkey                    | CREATE UNIQUE INDEX workout_sets_pkey ON public.workout_sets USING btree (id)                              |
+| workouts          | idx_workouts_user_id_date            | CREATE INDEX idx_workouts_user_id_date ON public.workouts USING btree (user_id, date)                      |
+| workouts          | workouts_pkey                        | CREATE UNIQUE INDEX workouts_pkey ON public.workouts USING btree (id)                                      |
+
+-- 7. VER EXTENSÕES INSTALADAS
+| oid   | extname            | extowner | extnamespace | extrelocatable | extversion | extconfig | extcondition |
+| ----- | ------------------ | -------- | ------------ | -------------- | ---------- | --------- | ------------ |
+| 13615 | plpgsql            | 10       | 11           | false          | 1.0        | null      | null         |
+| 16393 | pg_stat_statements | 16388    | 16392        | true           | 1.11       | null      | null         |
+| 16436 | uuid-ossp          | 16388    | 16392        | true           | 1.1        | null      | null         |
+| 16447 | pgcrypto           | 16388    | 16392        | true           | 1.3        | null      | null         |
+| 16608 | supabase_vault     | 10       | 16607        | false          | 0.3.1      | [16612]   | [""]         |
+
+-- 8. VER TRIGGERS
+| trigger_name            | event_manipulation | event_object_table | action_statement                     | action_timing |
+| ----------------------- | ------------------ | ------------------ | ------------------------------------ | ------------- |
+| set_profiles_updated_at | UPDATE             | profiles           | EXECUTE FUNCTION handle_updated_at() | BEFORE        |
+| set_plans_updated_at    | UPDATE             | plans              | EXECUTE FUNCTION handle_updated_at() | BEFORE        |
+| set_workouts_updated_at | UPDATE             | workouts           | EXECUTE FUNCTION handle_updated_at() | BEFORE        |
