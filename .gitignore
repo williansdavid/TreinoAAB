@@ -36,4 +36,3 @@ supabase.temp/
 # Sistema
 .DS_Store
 Thumbs.db
-supabase/config.toml

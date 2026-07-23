@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
+import { InstallButton } from "@/components/InstallButton";
 
 export function AppLayout() {
   return (
@@ -7,6 +8,7 @@ export function AppLayout() {
       <main className="pb-24">
         <Outlet />
       </main>
+      <InstallButton />
       <BottomNav />
     </div>
   );
